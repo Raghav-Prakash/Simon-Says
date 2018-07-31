@@ -16,12 +16,20 @@ class ViewController: UIViewController {
 	@IBOutlet var scoreLabels: [UILabel]!
 	@IBOutlet weak var actionButton: UIButton!
 	
+	//MARK: - Define variables for the game functionalities
+	var currentPlayer = 0
+	var scores = [0,0]
+	
+	var sequenceIndex = 0
+	var colorSequence = [Int]() // Save the color tags to be memorized
+	var colorsToTap = [Int]() // Have the saved color tags sequence to check if the tapped sequence matches the actual one.
+	
 	//MARK: - View Loaded. Sort collection outlets and set initial button text and colorButtons opaqueness.
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		
 		sortOutletCollections()
-		setInitAlpha()
+		setUpNewGame()
 	}
 	
 	//MARK: - Sort the collection outlets ([CircularButtons] and the two [UILabel]) based on increasing tags.
@@ -37,10 +45,51 @@ class ViewController: UIViewController {
 		})
 	}
 	//MARK: - Set the buttons to be 50% opaque (i.e. 50% transparent)
-	func setInitAlpha() {
+	func setUpNewGame() {
+		colorSequence.removeAll()
+		
 		actionButton.setTitle("Start Game", for: .normal)
+		actionButton.isEnabled = true
+		
 		for colorButton in colorButtons {
 			colorButton.alpha = 0.5
+			colorButton.isEnabled = false
+		}
+	}
+	
+	//MARK: - Generate a new color and save it to our colorSequence array
+	func addNewColor() {
+		colorSequence.append(Int(arc4random_uniform(UInt32(4))))
+	}
+	
+	//MARK: - Play the sequence for the player to memorize the generated colors
+	func playSequence() {
+		// Two parts - 1: flash the colors based on the color sequence and 2: have the user tap his memorized color sequence
+		if sequenceIndex < colorSequence.count {
+			// Part One. Get the color to flash and increment the index
+			let colorButtonToFlash = colorButtons[colorSequence[sequenceIndex]]
+			flash(colorButtonToFlash: colorButtonToFlash)
+			
+			sequenceIndex += 1
+		} else {
+			// Part Two. Re-enable user interaction on the view and re-enable the color buttons.
+			actionButton.setTitle("Tap the colors", for: .normal)
+			
+			view.isUserInteractionEnabled = true
+			for colorButton in colorButtons {
+				colorButton.isEnabled = true
+			}
+		}
+	}
+	//MARK: - Flash the color for the player to memorize
+	func flash(colorButtonToFlash: CircularButtons) {
+		// For 0.5 seconds, Color button's alpha value is 1.0 then reset to 0.5. This is an animation on the view.
+		// Once the animation is completed, we play the sequence again to flash the next color in the color sequence.
+		UIView.animate(withDuration: 0.5, animations: {
+			colorButtonToFlash.alpha = 1.0
+			colorButtonToFlash.alpha = 0.5
+		}) { (bool) in
+			self.playSequence()
 		}
 	}
 	
@@ -51,9 +100,18 @@ class ViewController: UIViewController {
 	
 	//MARK: - Action button pressed
 	@IBAction func actionButtonPressed(_ sender: UIButton) {
-		print("Color buttons order: \(colorButtons[0].tag), \(colorButtons[1].tag), \(colorButtons[2].tag), \(colorButtons[3].tag)")
-		print("Player Labels order: \(playerLabels[0].tag), \(playerLabels[1].tag)")
-		print("Score Labels order: \(scoreLabels[0].tag), \(scoreLabels[1].tag)")
+		sequenceIndex = 0
+		
+		actionButton.setTitle("Memorize", for: .normal)
+		actionButton.isEnabled = false
+		
+		view.isUserInteractionEnabled = false // disable any interaction on any part of the view
+		
+		// Add a new color and after a delay of 1 second, play the color sequence generated so far.
+		addNewColor()
+		DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+			self.playSequence()
+		}
 	}
 }
 
