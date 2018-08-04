@@ -75,10 +75,10 @@ class ViewController: UIViewController {
 			// Part Two. Re-enable user interaction on the view and re-enable the color buttons.
 			actionButton.setTitle("Tap the colors", for: .normal)
 			
+			colorsToTap = colorSequence
+			
 			view.isUserInteractionEnabled = true
-			for colorButton in colorButtons {
-				colorButton.isEnabled = true
-			}
+			enableOrDisableColors(option: "enable")
 		}
 	}
 	//MARK: - Flash the color for the player to memorize
@@ -95,7 +95,22 @@ class ViewController: UIViewController {
 	
 	//MARK: - Color buttons Pressed
 	@IBAction func colorButtonsPressed(_ sender: CircularButtons) {
-		print("Button with tag \(sender.tag) pressed")
+		if sender.tag == colorsToTap.removeFirst() {
+			
+		} else {
+			enableOrDisableColors(option: "disable")
+			print("Wrong sequence!")
+			return
+		}
+		
+		// If the user has tapped every button successfully, the colorsToTap array will be empty
+		if colorsToTap.isEmpty {
+			print("You got all right!")
+			
+			enableOrDisableColors(option: "disable")
+			actionButton.setTitle("Play Again?", for: .normal)
+			actionButton.isEnabled = true
+		}
 	}
 	
 	//MARK: - Action button pressed
@@ -111,6 +126,18 @@ class ViewController: UIViewController {
 		addNewColor()
 		DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
 			self.playSequence()
+		}
+	}
+	
+	//MARK: - Enable/Disable color buttons based on the parameter
+	func enableOrDisableColors(option: String) {
+		
+		for colorButton in colorButtons {
+			if(option.lowercased() == "enable") {
+				colorButton.isEnabled = true
+			} else {
+				colorButton.isEnabled = false
+			}
 		}
 	}
 }
