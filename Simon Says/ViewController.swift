@@ -24,6 +24,8 @@ class ViewController: UIViewController {
 	var colorSequence = [Int]() // Save the color tags to be memorized
 	var colorsToTap = [Int]() // Have the saved color tags sequence to check if the tapped sequence matches the actual one.
 	
+	var gameEnded = false
+	
 	//MARK: - View Loaded. Sort collection outlets and set initial button text and colorButtons opaqueness.
 	override func viewDidLoad() {
 		super.viewDidLoad()
@@ -55,6 +57,34 @@ class ViewController: UIViewController {
 			colorButton.alpha = 0.5
 			colorButton.isEnabled = false
 		}
+		
+		currentPlayer = 0
+		scores = [0,0]
+		
+		playerLabels[0].alpha = 1.0
+		scoreLabels[0].alpha = 1.0
+		
+		playerLabels[1].alpha = 0.5
+		scoreLabels[1].alpha = 0.5
+		
+		updateScores()
+		
+	}
+	//MARK: - Update scores
+	func updateScores() {
+		for (index,label) in scoreLabels.enumerated() {
+			label.text = "\(scores[index])"
+		}
+	}
+	//MARK: - Switch Players
+	func switchPlayers() {
+		playerLabels[currentPlayer].alpha = 0.5
+		scoreLabels[currentPlayer].alpha = 0.5
+		
+		currentPlayer = currentPlayer == 0 ? 1 : 0
+		
+		playerLabels[currentPlayer].alpha = 1.0
+		scoreLabels[currentPlayer].alpha = 1.0
 	}
 	
 	//MARK: - Generate a new color and save it to our colorSequence array
@@ -96,16 +126,17 @@ class ViewController: UIViewController {
 	//MARK: - Color buttons Pressed
 	@IBAction func colorButtonsPressed(_ sender: CircularButtons) {
 		if sender.tag == colorsToTap.removeFirst() {
-			
+			// Nothing to do here. User continues to tap the next buttons.
 		} else {
 			enableOrDisableColors(option: "disable")
-			print("Wrong sequence!")
-			return
+			endGame()
 		}
 		
-		// If the user has tapped every button successfully, the colorsToTap array will be empty
+		// If the player has tapped every button successfully, the colorsToTap array will be empty
 		if colorsToTap.isEmpty {
-			print("You got all right!")
+			scores[currentPlayer] += 1
+			updateScores()
+			switchPlayers()
 			
 			enableOrDisableColors(option: "disable")
 			actionButton.setTitle("Play Again?", for: .normal)
@@ -138,6 +169,22 @@ class ViewController: UIViewController {
 			} else {
 				colorButton.isEnabled = false
 			}
+		}
+	}
+	
+	//MARK: - Game has ended
+	func endGame() {
+		let message = currentPlayer == 0 ? "Player 2 Wins" : "Player 1 Wins"
+		actionButton.setTitle(message, for: .normal)
+		
+		gameEnded = true
+	}
+	
+	//MARK: - After the game has ended, the user can touch anywhere to begin a new game
+	override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+		if gameEnded {
+			gameEnded = false
+			setUpNewGame()
 		}
 	}
 }
